@@ -34,18 +34,20 @@
         android:layout_width="41dp"
         android:layout_height="32dp"
         android:text="TextView"
+        android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="@+id/custom_imageView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.512"
+        app:layout_constraintHorizontal_bias="0.688"
         app:layout_constraintStart_toEndOf="@+id/custom_imageView"
         app:layout_constraintTop_toTopOf="@+id/custom_imageView"
-        app:layout_constraintVertical_bias="0.475" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <TextView
         android:id="@+id/custom_low"
         android:layout_width="41dp"
         android:layout_height="34dp"
         android:text="TextView"
+        android:textColor="#560F0E0E"
         app:layout_constraintBottom_toBottomOf="@+id/custom_imageView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.953"

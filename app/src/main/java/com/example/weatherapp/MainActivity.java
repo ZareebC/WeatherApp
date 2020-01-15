@@ -15,10 +15,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
 import android.view.animation.ScaleAnimation;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -62,14 +66,21 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Weather> arrayList;
     ArrayList<String>  highTemp;
     ArrayList<String> lowTemp;
+    ArrayList<String> iconList;
     ConstraintLayout constraintLayout;
     CustomAdapter customAdapter;
+    int counter = 0;
+    int fakeCounter = 0;
+    double tempLow = 10000;
+    double tempHigh = 0;
+    HorizontalScrollView horizontalScrollview;
     TextView city;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        highTemp = new ArrayList<>();
+        lowTemp = new ArrayList<>();
         bigImage = findViewById(R.id.bigImage);
         zip = findViewById(R.id.editText);
         quoteTheme = findViewById(R.id.quoteTheme);
@@ -78,11 +89,14 @@ public class MainActivity extends AppCompatActivity {
         bigDate = findViewById(R.id.bigDate);
         listView = findViewById(R.id.listView);
         submit = findViewById(R.id.submit);
+        //horizontalScrollview  = findViewById(R.id.horiztonal_scrollview_id);
         BigBig = findViewById(R.id.backGround);
         arrayList = new ArrayList<>();
         index = new ArrayList<>();
+        iconList = new ArrayList<>();
         city = findViewById(R.id.city);
         constraintLayout = findViewById(R.id.linearLayout);
+
         customAdapter = new CustomAdapter(this, R.layout.adapter_custom, arrayList);
         listView.setAdapter(customAdapter);
 
@@ -160,7 +174,8 @@ public class MainActivity extends AppCompatActivity {
                 JSONArray weatherArray = jsonObject.getJSONArray("list");
                 JSONObject currentWeather = weatherArray.getJSONObject(0);
 
-                bigTemp.setText((returnTemp(currentWeather.getJSONObject("main").getString("temp").toString())).toString());
+                city.setText(jsonObject.getJSONObject("city").getString("name"));
+                bigTemp.setText((returnTemp(currentWeather.getJSONObject("main").getString("temp").toString())).toString()+"°F");
                 weatherDesc.setText(currentWeather.getJSONArray("weather").getJSONObject(0).getString("main"));
                 bigDate.setText(currentWeather.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")));
                 pickQuote(currentWeather.getJSONArray("weather").getJSONObject(0).getString("main"));
@@ -172,28 +187,48 @@ public class MainActivity extends AppCompatActivity {
 
                 for(int i = 0; i < 40; i++){
                     int temp = 0;
+                    counter = 0;
+                    fakeCounter = 0;
+                    tempHigh = 0;
+                    tempLow = 1000;
                     if(weatherArray.getJSONObject(i).getString("dt_txt").substring(currentWeather.getString("dt_txt").indexOf(" "), currentWeather.getString("dt_txt").length()).equals(" 00:00:00")){
                         index.add(i);
-                        /*for(int j = 0; j < 8; j++){
-                            tempweatherArray.getJSONObject(i).getJSONObject("main").getString("temp_max");
-                        }*/
+                        while(counter < 8){
+                            if(counter+i < 40) {
+                                if (returnTemp(weatherArray.getJSONObject(i + counter).getJSONObject("main").getString("temp_max")) > tempHigh) {
+                                    tempHigh = returnTemp(weatherArray.getJSONObject(i + counter).getJSONObject("main").getString("temp_max"));
+                                    fakeCounter = counter;
+                                }
+                                if (returnTemp(weatherArray.getJSONObject(i + counter).getJSONObject("main").getString("temp_min")) < tempLow) {
+                                    tempLow = returnTemp(weatherArray.getJSONObject(i + counter).getJSONObject("main").getString("temp_min"));
+                                }
+
+                            }
+                            counter++;
+                        }
+
+                        highTemp.add(tempHigh+"");
+                        lowTemp.add(tempLow+"");
+                        iconList.add(weatherArray.getJSONObject(fakeCounter+i).getJSONArray("weather").getJSONObject(0).getString("icon"));
                     }
+                    Log.d("Tag6", highTemp.size()+"");
                     Log.d("Tag", weatherArray.getJSONObject(i).getString("dt_txt").substring(currentWeather.getString("dt_txt").indexOf(" "), currentWeather.getString("dt_txt").length()));
                     //index.add(i);
                 }
+                //Log.d("Tag6", highTemp.size()+"");
 
                 Log.d("Tagsize", index.size()+"");
                 JSONObject dayOne = weatherArray.getJSONObject(index.get(0));
-                Weather weatherOne = new Weather(returnTemp(dayOne.getJSONObject("main").getString("temp_max")), returnTemp(dayOne.getJSONObject("main").getString("temp_min")), dayOne.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+dayOne.getJSONArray("weather").getJSONObject(0).getString("icon")+"@2x.png");
+                Weather weatherOne = new Weather(Double.parseDouble(highTemp.get(0)), /*returnTemp(dayOne.getJSONObject("main").getString("temp_max"))*/ Double.parseDouble(highTemp.get(0)), dayOne.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(0)/*dayOne.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 JSONObject dayTwo = weatherArray.getJSONObject(index.get(1));
-                Weather weatherTwo = new Weather(returnTemp(dayTwo.getJSONObject("main").getString("temp_max")), returnTemp(dayTwo.getJSONObject("main").getString("temp_min")), dayTwo.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+dayTwo.getJSONArray("weather").getJSONObject(0).getString("icon")+"@2x.png");
+                Weather weatherTwo = new Weather(Double.parseDouble(highTemp.get(1)), Double.parseDouble(lowTemp.get(1)), dayTwo.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(1)/*dayTwo.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 JSONObject dayThree = weatherArray.getJSONObject(index.get(2));
                 Log.d("Tag1", dayTwo.getJSONArray("weather").getJSONObject(0).getString("main"));
-                Weather weatherThree = new Weather(returnTemp(dayThree.getJSONObject("main").getString("temp_max")), returnTemp(dayThree.getJSONObject("main").getString("temp_min")), dayThree.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+dayThree.getJSONArray("weather").getJSONObject(0).getString("icon")+"@2x.png");
+                Weather weatherThree = new Weather(Double.parseDouble(highTemp.get(2)), Double.parseDouble(lowTemp.get(2)), dayThree.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(2)/*dayThree.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 JSONObject dayFour = weatherArray.getJSONObject(index.get(3));
-                Weather weatherFour = new Weather(returnTemp(dayFour.getJSONObject("main").getString("temp_max")), returnTemp(dayFour.getJSONObject("main").getString("temp_min")), dayFour.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+dayFour.getJSONArray("weather").getJSONObject(0).getString("icon")+"@2x.png");
+                Weather weatherFour = new Weather(Double.parseDouble(highTemp.get(3)), Double.parseDouble(lowTemp.get(3)), dayFour.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(3)/*dayFour.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 JSONObject dayFive = weatherArray.getJSONObject(index.get(4));
-                Weather weatherFive = new Weather(returnTemp(dayFive.getJSONObject("main").getString("temp_max")), returnTemp(dayFive.getJSONObject("main").getString("temp_min")), dayFive.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+dayFive.getJSONArray("weather").getJSONObject(0).getString("icon")+"@2x.png");
+                Weather weatherFive = new Weather(Double.parseDouble(highTemp.get(4)), Double.parseDouble(lowTemp.get(4)), dayFive.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(4)/*dayFive.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 arrayList.add(weatherOne);
                 arrayList.add(weatherTwo);
                 arrayList.add(weatherThree);
@@ -301,6 +336,7 @@ public class MainActivity extends AppCompatActivity {
                 Picasso.get().load(R.drawable.thunderstorm).into(BigBig);
                 break;
         }
+
     }
 
     public class Weather{
