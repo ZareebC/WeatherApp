@@ -38,9 +38,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static okhttp3.internal.http.HttpDate.format;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,8 +54,10 @@ public class MainActivity extends AppCompatActivity {
     BufferedReader reader;
     String line = null;
     String info;
+    String infoCurr;
     JSONObject jsonObject;
     String zipcode;
+    String currZipcode;
     ImageView bigImage;
     EditText zip;
     TextView quoteTheme;
@@ -69,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> iconList;
     ConstraintLayout constraintLayout;
     CustomAdapter customAdapter;
+    TextView time;
     int counter = 0;
     int fakeCounter = 0;
     double tempLow = 10000;
@@ -86,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         quoteTheme = findViewById(R.id.quoteTheme);
         bigTemp = findViewById(R.id.bigTemp);
         weatherDesc = findViewById(R.id.weatherDesc);
+        time = findViewById(R.id.time);
         bigDate = findViewById(R.id.bigDate);
         listView = findViewById(R.id.listView);
         submit = findViewById(R.id.submit);
@@ -112,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 zipcode = s.toString();
+
             }
 
             @Override
@@ -137,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 listView.setVisibility(View.VISIBLE);
                 BigBig.setVisibility(View.VISIBLE);
                 bigImage.setVisibility(View.VISIBLE);
+                time.setVisibility(View.VISIBLE);
 
                 new AsyncThread().execute(zipcode);
             }
@@ -158,6 +167,16 @@ public class MainActivity extends AppCompatActivity {
                 info = reader.readLine();
                 Log.d("Tag3", info);
 
+
+                url = new URL("http://api.openweathermap.org/data/2.5/weather?zip="+zipcode+"&APPID=474c75c79c0edb7aceb1da1651b97629");
+                link = url.openConnection();
+                stream = link.getInputStream();
+                streamReader = new InputStreamReader(stream);
+                reader = new BufferedReader(streamReader);
+                infoCurr = reader.readLine();
+                Log.d("Tag3", info);
+                Log.d("Tag3", infoCurr);
+
             }catch(Exception e) {
                 e.printStackTrace();
                 Log.d("Tag1", e.toString());
@@ -171,15 +190,18 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(aVoid);
             try {
                 JSONObject jsonObject = new JSONObject(info);
+                JSONObject jsonObjectCurr = new JSONObject(infoCurr);
                 JSONArray weatherArray = jsonObject.getJSONArray("list");
+                JSONObject currentWeather1 = jsonObjectCurr;
                 JSONObject currentWeather = weatherArray.getJSONObject(0);
 
+                time.setText(new SimpleDateFormat("hh:mm:ss a zzz").format(new java.util.Date()));
                 city.setText(jsonObject.getJSONObject("city").getString("name"));
-                bigTemp.setText((returnTemp(currentWeather.getJSONObject("main").getString("temp").toString())).toString()+"°F");
-                weatherDesc.setText(currentWeather.getJSONArray("weather").getJSONObject(0).getString("main"));
+                bigTemp.setText((returnTemp(currentWeather1.getJSONObject("main").getString("temp").toString())).toString()+"°F");
+                weatherDesc.setText(currentWeather1.getJSONArray("weather").getJSONObject(0).getString("main"));
                 bigDate.setText(currentWeather.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")));
-                pickQuote(currentWeather.getJSONArray("weather").getJSONObject(0).getString("main"));
-                setTheBackground(currentWeather.getJSONArray("weather").getJSONObject(0).getString("main"));
+                pickQuote(currentWeather1.getJSONArray("weather").getJSONObject(0).getString("main"));
+                setTheBackground(currentWeather1.getJSONArray("weather").getJSONObject(0).getString("main"));
                 Picasso.get().load("http://openweathermap.org/img/wn/"+currentWeather.getJSONArray("weather").getJSONObject(0).getString("icon")+"@2x.png").into(bigImage);
                 Log.d("Tag", "here");
 
@@ -191,6 +213,10 @@ public class MainActivity extends AppCompatActivity {
                     fakeCounter = 0;
                     tempHigh = 0;
                     tempLow = 1000;
+                    if(weatherArray.getJSONObject(i).getString("dt_txt").substring(currentWeather.getString("dt_txt").indexOf(" "), currentWeather.getString("dt_txt").length()).equals(" 12:00:00")){
+                        iconList.add(weatherArray.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
+                        Log.d("Tag7", iconList.size()+"");
+                    }
                     if(weatherArray.getJSONObject(i).getString("dt_txt").substring(currentWeather.getString("dt_txt").indexOf(" "), currentWeather.getString("dt_txt").length()).equals(" 00:00:00")){
                         index.add(i);
                         while(counter < 8){
@@ -209,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
 
                         highTemp.add(tempHigh+"");
                         lowTemp.add(tempLow+"");
-                        iconList.add(weatherArray.getJSONObject(fakeCounter+i).getJSONArray("weather").getJSONObject(0).getString("icon"));
+                        //iconList.add(weatherArray.getJSONObject(fakeCounter+i).getJSONArray("weather").getJSONObject(0).getString("icon"));
                     }
                     Log.d("Tag6", highTemp.size()+"");
                     Log.d("Tag", weatherArray.getJSONObject(i).getString("dt_txt").substring(currentWeather.getString("dt_txt").indexOf(" "), currentWeather.getString("dt_txt").length()));
@@ -219,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d("Tagsize", index.size()+"");
                 JSONObject dayOne = weatherArray.getJSONObject(index.get(0));
-                Weather weatherOne = new Weather(Double.parseDouble(highTemp.get(0)), /*returnTemp(dayOne.getJSONObject("main").getString("temp_max"))*/ Double.parseDouble(highTemp.get(0)), dayOne.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(0)/*dayOne.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
+                Weather weatherOne = new Weather(Double.parseDouble(highTemp.get(0)), /*returnTemp(dayOne.getJSONObject("main").getString("temp_max"))*/ Double.parseDouble(lowTemp.get(0)), dayOne.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(0)/*dayOne.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 JSONObject dayTwo = weatherArray.getJSONObject(index.get(1));
                 Weather weatherTwo = new Weather(Double.parseDouble(highTemp.get(1)), Double.parseDouble(lowTemp.get(1)), dayTwo.getString("dt_txt").substring(0, currentWeather.getString("dt_txt").indexOf(" ")), "http://openweathermap.org/img/wn/"+iconList.get(1)/*dayTwo.getJSONArray("weather").getJSONObject(0).getString("icon")*/+"@2x.png");
                 JSONObject dayThree = weatherArray.getJSONObject(index.get(2));
